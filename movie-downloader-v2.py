@@ -423,11 +423,20 @@ def beam_upsert(jwt, tmdb_id, quality, languages, url):
     return res.json()
 
 
+BROWSER_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Accept": "*/*",
+    "Connection": "keep-alive",
+}
+
+
 def download_file(url, dest_path):
     cmd = [
         "aria2c", "-x", "8", "-s", "8", "-k", "5M",
         "--file-allocation=none", "--summary-interval=0", "--retry-wait=10",
         "--max-tries=8", "--timeout=45", "--auto-file-renaming=false",
+        f"--header=User-Agent: {BROWSER_HEADERS['User-Agent']}",
+        f"--header=Accept: {BROWSER_HEADERS['Accept']}",
         "-d", os.path.dirname(dest_path), "-o", os.path.basename(dest_path), url
     ]
     result = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
@@ -438,8 +447,7 @@ def download_file(url, dest_path):
     try:
         if os.path.exists(dest_path):
             os.remove(dest_path)
-        headers = {"User-Agent": "Mozilla/5.0"}
-        with requests.get(url, headers=headers, stream=True, timeout=60) as r:
+        with requests.get(url, headers=BROWSER_HEADERS, stream=True, timeout=60) as r:
             r.raise_for_status()
             with open(dest_path, 'wb') as f:
                 for chunk in r.iter_content(chunk_size=1024 * 1024):
